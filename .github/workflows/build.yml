@@ -95,6 +95,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.platform.python-architecture }}
 
+
       - name: Install Rust toolchain
         if: matrix.platform.os != 'ubuntu-latest'
         uses: actions-rs/toolchain@v1
