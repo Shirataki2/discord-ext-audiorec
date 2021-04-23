@@ -48,26 +48,12 @@ jobs:
         #   https://github.com/actions/setup-python/issues/207
         #   https://github.com/pytest-dev/pytest/issues/8539
         # python-version: [3.6, 3.7, 3.8, 3.9, 3.10-dev, pypy-3.6, pypy-3.7]
-        python-version: [3.6, 3.7, 3.8, 3.9, 3.10.0-alpha.7, pypy-3.6, pypy-3.7]
+        python-version: [3.6, 3.7, 3.8, 3.9, 3.10.0-alpha.7]
         platform: [
           { os: "macos-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
           { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
-          { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
         ]
-        exclude:
-          # There is no 64-bit pypy on windows for pypy-3.6
-          - python-version: pypy-3.6
-            platform: { os: "windows-latest", python-architecture: "x64" }
-          # pypy on windows for pypy-3.7 coming in next PyPy release
-          - python-version: pypy-3.7
-            platform: { os: "windows-latest", python-architecture: "x64" }
-        include:
-          # Test minimal supported Rust version
-          - rust: 1.41.1
-            python-version: 3.9
-            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
-            msrv: "MSRV"
 
     steps:
       - uses: actions/checkout@v2
@@ -121,6 +107,7 @@ jobs:
           python setup.py bdist_wheel
 
       - uses: actions/upload-artifact@v2
+        if: matrix.platform.os != 'ubuntu-latest' || matrix.python-version == 3.9
         with:
           name: python-wheels
           path: ./dist/ 
