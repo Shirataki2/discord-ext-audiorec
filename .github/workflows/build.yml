@@ -92,12 +92,14 @@ jobs:
           default: true
 
           
-      - name: Docker Login
+      - name: Login to Quay.io
         if: matrix.platform.os == 'ubuntu-latest' && matrix.python-version == 3.9
         uses: docker/login-action@v1
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: quay.io
+          logout: false
+          username: ${{ secrets.QUAYIO_USERNAME }}
+          password: ${{ secrets.QUAYIO_TOKEN }}
 
       - name: Manylinux Build
         if: matrix.platform.os == 'ubuntu-latest' && matrix.python-version == 3.9
