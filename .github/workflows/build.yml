@@ -105,7 +105,7 @@ jobs:
           default: true
 
       - name: Manylinux Build
-        if: matrix.platform.os == 'ubuntu-latest' && python-version == 3.9
+        if: matrix.platform.os == 'ubuntu-latest' && matrix.platform.python-version == 3.9
         uses: RalfG/python-wheels-manylinux-build@v0.3.3-manylinux2014_x86_64
         with:
           build-requirements: 'setuptools-rust'
