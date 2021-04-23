@@ -79,9 +79,6 @@ jobs:
           brew install gnu-tar
           brew install opus
           echo "/usr/local/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
-      
-      - name: Install Dependencies(Ubuntu only)
-        if: matrix.platform.os == 'ubuntu-latest'
 
       - uses: actions/cache@v2
         with:
