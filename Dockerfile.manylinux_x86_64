@@ -1,0 +1,11 @@
+FROM quay.io/pypa/manylinux_2014_x86_64
+
+RUN apt-get -y update
+RUN apt-get -y install \
+    gcc \
+    libclang-dev \
+    make \
+    automake \
+    autoconf \
+    libtool \
+    libopus-dev

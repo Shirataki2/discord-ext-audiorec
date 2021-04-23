@@ -1,0 +1,11 @@
+FROM quay.io/pypa/manylinux_2_24_i686
+
+RUN apt-get -y update
+RUN apt-get -y install \
+    gcc \
+    libclang-dev \
+    make \
+    automake \
+    autoconf \
+    libtool \
+    libopus-dev

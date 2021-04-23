@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - run: pip install black==20.8b1
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt
+      - name: Check python formatting (black)
+        run: black --check .
+      - name: Check rust formatting (rustfmt)
+        run: cargo fmt --all -- --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: clippy
+      - run: make clippy
+  build:
+    needs: [fmt] # don't wait for clippy as fails rarely and takes longer
+    name: python${{ matrix.python-version }}-${{ matrix.platform.python-architecture }} ${{ matrix.platform.os }} ${{ matrix.msrv }}
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false  # If one platform fails, allow the rest to keep testing.
+      matrix:
+        rust: [stable]
+        # Github actions has a "bogus" 3.10-beta.1 release which interacts badly
+        # with pytest (use 3.10-dev again once pytest has released a fix):
+        #   https://github.com/actions/setup-python/issues/207
+        #   https://github.com/pytest-dev/pytest/issues/8539
+        # python-version: [3.6, 3.7, 3.8, 3.9, 3.10-dev, pypy-3.6, pypy-3.7]
+        python-version: [3.6, 3.7, 3.8, 3.9, 3.10.0-alpha.7, pypy-3.6, pypy-3.7]
+        platform: [
+          { os: "macos-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
+          { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
+          { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
+          { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
+        ]
+        exclude:
+          # There is no 64-bit pypy on windows for pypy-3.6
+          - python-version: pypy-3.6
+            platform: { os: "windows-latest", python-architecture: "x64" }
+          # pypy on windows for pypy-3.7 coming in next PyPy release
+          - python-version: pypy-3.7
+            platform: { os: "windows-latest", python-architecture: "x64" }
+        include:
+          # Test minimal supported Rust version
+          - rust: 1.41.1
+            python-version: 3.9
+            platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
+            msrv: "MSRV"
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Dependencies (macOS only)
+        if: matrix.platform.os == 'macos-latest'
+        run: |
+          brew install gnu-tar
+          brew install opus
+          echo "/usr/local/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
+      
+      - name: Install Dependencies(Ubuntu only)
+        if: matrix.platform.os == 'ubuntu-latest'
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ matrix.python-version }}-${{ matrix.platform.python-architecture }}-${{ matrix.platform.os }}-${{ matrix.msrv }}-${{ hashFiles('**/Cargo.toml') }}
+        continue-on-error: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        if: matrix.platform.os != 'ubuntu-latest'
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.platform.python-architecture }}
+
+      - name: Install Rust toolchain
+        if: matrix.platform.os != 'ubuntu-latest'
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.platform.rust-target }}
+          profile: minimal
+          default: true
+
+      - name: Manylinux Build
+        if: matrix.platform.os == 'ubuntu-latest'
+        uses: RalfG/python-wheels-manylinux-build@v0.3.3-manylinux2010_x86_64
+        with:
+          build-requirements: 'setuptools-rust'
+          system-packages: 'opus-devel'
+          pre-build-command: 'curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y'
+          pip-wheel-args: '-w ./dist --no-deps'
+
+      - name: {{ matrix.platform.os }} Build (Python)
+        if: matrix.platform.os == 'ubuntu-latest'
+        run: |
+          python -m pip install -U setuptools wheel pip
+          python -m setup.py bdist_wheel
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: python-wheels
+          path: ./dist/ 
+
+    env:
+      CARGO_TERM_VERBOSE: true
+      CARGO_BUILD_TARGET: ${{ matrix.platform.rust-target }}
+      RUST_BACKTRACE: 1
+      RUSTFLAGS: "-D warnings"
+      RUSTDOCFLAGS: "-D warnings"
