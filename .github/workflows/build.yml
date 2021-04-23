@@ -92,23 +92,20 @@ jobs:
           default: true
 
           
-      - name: Login to Quay.io
+      - name: Login to ghcr.io
         if: matrix.platform.os == 'ubuntu-latest' && matrix.python-version == 3.9
         uses: docker/login-action@v1
         with:
-          registry: quay.io
-          logout: false
-          username: ${{ secrets.QUAYIO_USERNAME }}
-          password: ${{ secrets.QUAYIO_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Manylinux Build
         if: matrix.platform.os == 'ubuntu-latest' && matrix.python-version == 3.9
         run: |
-          docker build -f Dockerfile.manylinux_x86_64 -t manylinux_x86_64:develop .
-          docker build -f Dockerfile.manylinux_i686 -t manylinux_i686:develop .
           python setup.py sdist
-          docker run --rm -v `pwd`:/io manylinux_x86_64:develop /io/build-wheels.sh
-          docker run --rm -v `pwd`:/io manylinux_i686:develop /io/build-wheels.sh
+          docker run --rm -v `pwd`:/io ghcr.io/shirataki2/manylinux_x86_64:latest /io/build-wheels.sh
+          docker run --rm -v `pwd`:/io ghcr.io/shirataki2/manylinux_i686:latest /io/build-wheels.sh
 
       - name: Build Wheel
         if: matrix.platform.os != 'ubuntu-latest'
