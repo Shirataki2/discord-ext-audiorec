@@ -104,7 +104,6 @@ jobs:
         if: matrix.platform.os == 'ubuntu-latest' && matrix.python-version == 3.9
         run: |
           docker run --rm -v `pwd`:/io ghcr.io/shirataki2/manylinux_x86_64:latest /io/build-wheels.sh
-          docker run --rm -v `pwd`:/io ghcr.io/shirataki2/manylinux_i686:latest /io/build-wheels.sh
 
       - name: Build Wheel
         if: matrix.platform.os != 'ubuntu-latest'
