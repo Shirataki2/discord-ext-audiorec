@@ -111,14 +111,14 @@ jobs:
         with:
           build-requirements: 'setuptools-rust'
           system-packages: 'opus-devel'
-          pre-build-command: 'bash -c "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y"'
+          pre-build-command: 'sh prebuild.sh'
           pip-wheel-args: '-w ./dist --no-deps'
 
       - name: Build Wheel
         if: matrix.platform.os != 'ubuntu-latest'
         run: |
           python -m pip install -U setuptools wheel pip setuptools_rust
-          python -m setup.py bdist_wheel
+          python setup.py bdist_wheel
 
       - uses: actions/upload-artifact@v2
         with:
@@ -131,3 +131,4 @@ jobs:
       RUST_BACKTRACE: 1
       RUSTFLAGS: "-D warnings"
       RUSTDOCFLAGS: "-D warnings"
+      MACOSX_DEPLOYMENT_TARGET: 10.15
