@@ -81,14 +81,6 @@ impl OpCode {
         Ok(serde_json::to_string(&payload)?)
     }
 
-    pub(crate) fn speaking(speaking: Speaking) -> Result<String> {
-        let payload = serde_json::json!({
-            "op": 5,
-            "d": speaking,
-        });
-        Ok(serde_json::to_string(&payload)?)
-    }
-
     pub(crate) fn resume(resume: Resume) -> Result<String> {
         let payload = serde_json::json!({
             "op": 7,
@@ -174,12 +166,6 @@ pub(crate) struct Speaking {
     pub speaking: u8,
 }
 
-impl Speaking {
-    pub fn new(flag: u8) -> Speaking {
-        Speaking { speaking: flag }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct HeartbeatAck(pub u64);
 
@@ -255,6 +241,12 @@ pub(crate) trait Encryptor: Sized {
         header: &[u8],
         buffer: &mut dyn Buffer,
     ) -> std::result::Result<(), xsalsa20poly1305::aead::Error>;
+
+    fn decrypt(
+        &self,
+        cipher: &XSalsa20Poly1305,
+        buffer: &mut dyn Buffer,
+    ) -> std::result::Result<[u8; 12], xsalsa20poly1305::aead::Error>;
 }
 
 impl Encryptor for EncryptionMode {
@@ -290,6 +282,49 @@ impl Encryptor for EncryptionMode {
         };
 
         Ok(())
+    }
+
+    fn decrypt(
+        &self,
+        cipher: &XSalsa20Poly1305,
+        buffer: &mut dyn Buffer,
+    ) -> std::result::Result<[u8; 12], xsalsa20poly1305::aead::Error> {
+        let header = match self {
+            EncryptionMode::XSalsa20Poly1305 => {
+                let mut header = [0; 12];
+                let mut nonce = [0; 24];
+                header.copy_from_slice(&buffer.as_ref()[..12]);
+                nonce[..12].copy_from_slice(&header);
+                buffer.as_mut().rotate_left(12);
+                buffer.truncate(buffer.len() - 12);
+                let nonce = GenericArray::from_slice(&nonce);
+                cipher.decrypt_in_place(nonce, b"", buffer)?;
+                header
+            }
+            EncryptionMode::XSalsa20Poly1305Suffix => {
+                let mut header = [0; 12];
+                let mut nonce = [0; 24];
+                header.copy_from_slice(&buffer.as_ref()[..12]);
+                nonce.copy_from_slice(&buffer.as_ref()[buffer.len() - 24..]);
+                buffer.as_mut().rotate_left(12);
+                buffer.truncate(buffer.len() - 36);
+                let nonce = GenericArray::from_slice(&nonce);
+                cipher.decrypt_in_place(nonce, b"", buffer)?;
+                header
+            }
+            EncryptionMode::XSalsa20Poly1305Lite => {
+                let mut header = [0; 12];
+                let mut nonce = [0; 24];
+                header.copy_from_slice(&buffer.as_ref()[..12]);
+                nonce[..4].copy_from_slice(&buffer.as_ref()[buffer.len() - 4..]);
+                buffer.as_mut().rotate_left(12);
+                buffer.truncate(buffer.len() - 16);
+                let nonce = GenericArray::from_slice(&nonce);
+                cipher.decrypt_in_place(nonce, b"", buffer)?;
+                header
+            }
+        };
+        Ok(header)
     }
 }
 

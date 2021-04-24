@@ -1,5 +1,4 @@
-#![allow(dead_code)]
-
+#![allow(clippy::needless_range_loop)]
 #[macro_use]
 extern crate log;
 #[macro_use]
@@ -10,6 +9,7 @@ pub(crate) mod error;
 pub(crate) mod futures;
 pub(crate) mod payload;
 pub(crate) mod player;
+pub(crate) mod recorder;
 pub(crate) mod state;
 pub(crate) mod ws;
 

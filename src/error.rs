@@ -47,6 +47,8 @@ pub(crate) enum DiscordError {
     EncryptionError(xsalsa20poly1305::aead::Error),
     #[error("Opus Error: {0:?}")]
     OpusError(#[from] audiopus::Error),
+    #[error("Wav Error: {0:?}")]
+    WavFileError(#[from] hound::Error),
 }
 
 impl From<DiscordError> for PyErr {
@@ -68,6 +70,7 @@ impl From<DiscordError> for PyErr {
             ConnectionClosed(_) => GatewayError::new_err(err.to_string()),
             EncryptionError(_) => EncryptionFailed::new_err(err.to_string()),
             OpusError(_) => InternalError::new_err(err.to_string()),
+            WavFileError(_) => InternalIOError::new_err(err.to_string()),
         }
     }
 }

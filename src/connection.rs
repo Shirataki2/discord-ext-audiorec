@@ -1,20 +1,27 @@
 use std::{sync::Arc, thread};
 
 use parking_lot::Mutex;
-use pyo3::{prelude::*, types::PyDict};
+use pyo3::{
+    prelude::*,
+    types::{PyBytes, PyDict},
+};
 
 use crate::{
     error::DiscordError,
     futures,
     payload::SpeakingType,
     player::{AudioPlayer, FFmpegAudio},
+    recorder::{AudioDecoder, AudioRecorder, SsrcPacketQueue},
+    state::ConnectionState,
     ws::{VoiceGateway, VoiceGatewayBuilder},
 };
 
 #[pyclass]
 pub(crate) struct VoiceConnection {
     gateway: Arc<Mutex<VoiceGateway>>,
+    queue: Arc<Mutex<SsrcPacketQueue>>,
     player: Option<AudioPlayer>,
+    recorder: Arc<Mutex<Option<AudioRecorder>>>,
 }
 
 #[pymethods]
@@ -35,6 +42,7 @@ impl VoiceConnection {
             if let Err(e) = result {
                 let gil = Python::acquire_gil();
                 let py = gil.python();
+                py.check_signals().unwrap();
                 match e {
                     DiscordError::ConnectionClosed(code)
                         if code != 1000 && code != 4014 && code != 4015 =>
@@ -85,6 +93,14 @@ impl VoiceConnection {
         }
     }
 
+    fn is_recording(&self) -> bool {
+        if let Some(recoder) = &*self.recorder.lock() {
+            recoder.is_recording()
+        } else {
+            false
+        }
+    }
+
     fn send_playing(&self) -> PyResult<()> {
         let mut lock = self.gateway.lock();
         lock.speaking(SpeakingType::MICROPHONE)?;
@@ -106,6 +122,73 @@ impl VoiceConnection {
         );
         self.player = Some(player);
         Ok(())
+    }
+
+    fn record(&mut self) {
+        if let Some(recorder) = &*self.recorder.lock() {
+            recorder.stop();
+        }
+        self.queue = Arc::new(Mutex::new(SsrcPacketQueue::new()));
+        let recorder = AudioRecorder::new(
+            |err| {
+                if let Some(e) = err {
+                    error!("Audio Recorder error: {:?}", e);
+                }
+            },
+            Arc::clone(&self.gateway),
+            Arc::clone(&self.queue),
+        );
+        self.recorder = Arc::new(Mutex::new(Some(recorder)));
+    }
+
+    fn stop_record(&mut self, py: Python, loop_: PyObject) -> PyResult<PyObject> {
+        let (ftr, res): (PyObject, PyObject) = {
+            let ftr = loop_.call_method0(py, "create_future")?;
+            (ftr.clone_ref(py), ftr)
+        };
+
+        let gateway = Arc::clone(&self.gateway);
+        let queue = Arc::clone(&self.queue);
+        let recorder = Arc::clone(&self.recorder);
+
+        let state = {
+            let gateway = gateway.lock();
+            Arc::clone(&gateway.state)
+        };
+        state.set_state(ConnectionState::RecordFinished);
+
+        thread::spawn(move || {
+            let gil = Python::acquire_gil();
+            let py = gil.python();
+            py.check_signals().unwrap();
+            let data = if let Some(recorder) = &*recorder.lock() {
+                recorder.stop();
+                let mut decoder = {
+                    let gateway = gateway.lock();
+                    match AudioDecoder::from_gateway(&*gateway) {
+                        Ok(decoder) => decoder,
+                        Err(e) => {
+                            let _ = futures::set_exception(py, loop_, ftr, PyErr::from(e));
+                            return;
+                        }
+                    }
+                };
+
+                let mut queue = queue.lock();
+                let data = match queue.decode(&mut decoder) {
+                    Ok(data) => data,
+                    Err(e) => {
+                        let _ = futures::set_exception(py, loop_, ftr, PyErr::from(e));
+                        return;
+                    }
+                };
+                data.unwrap_or_default()
+            } else {
+                vec![]
+            };
+            let _ = futures::set_result(py, loop_, ftr, PyBytes::new(py, &data).to_object(py));
+        });
+        Ok(res)
     }
 
     fn get_state<'py>(&self, py: Python<'py>) -> PyResult<&'py PyDict> {
@@ -183,11 +266,14 @@ impl VoiceConnector {
             };
             let gil = Python::acquire_gil();
             let py = gil.python();
+            py.check_signals().unwrap();
             match result {
                 Ok(gw) => {
                     let obj = VoiceConnection {
                         gateway: Arc::new(Mutex::new(gw)),
+                        queue: Arc::new(Mutex::new(SsrcPacketQueue::new())),
                         player: None,
+                        recorder: Arc::new(Mutex::new(None)),
                     };
                     let _ = futures::set_result(py, loop_, ftr, obj.into_py(py));
                 }

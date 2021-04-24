@@ -23,7 +23,7 @@ use std::{
 
 #[allow(dead_code)]
 
-pub const SAMPLEING_RATE: u16 = 48000;
+pub const SAMPLING_RATE: u16 = 48000;
 #[allow(dead_code)]
 pub const CHANNELS: u16 = 2;
 #[allow(dead_code)]
@@ -31,7 +31,7 @@ pub const FRAME_LENGTH: u16 = 20;
 #[allow(dead_code)]
 pub const SAMPLE_SIZE: u16 = 4;
 #[allow(dead_code)]
-pub const SAMPLES_PER_FRAME: u32 = ((SAMPLEING_RATE / 1000) * FRAME_LENGTH) as u32;
+pub const SAMPLES_PER_FRAME: u32 = ((SAMPLING_RATE / 1000) * FRAME_LENGTH) as u32;
 #[allow(dead_code)]
 pub const FRAME_SIZE: u32 = SAMPLES_PER_FRAME * SAMPLE_SIZE as u32;
 
@@ -140,7 +140,7 @@ impl Buffer for AudioBuffer<'_> {
     }
 }
 
-const BUFSIZE: usize = 1275 + 24 + 12 + 24 + 16 + 12;
+pub(crate) const BUFSIZE: usize = 1275 + 24 + 12 + 24 + 16 + 12;
 
 pub(crate) struct AudioEncoder {
     opus: audiopus::coder::Encoder,
@@ -374,6 +374,7 @@ impl AudioPlayer {
         self.state.set_state(ConnectionState::Finished);
     }
 
+    #[allow(dead_code)]
     pub fn is_paused(&self) -> bool {
         self.state.is_state(ConnectionState::Paused)
     }

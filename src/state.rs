@@ -42,6 +42,7 @@ pub enum ConnectionState {
     Connected,
     Playing,
     Recording,
+    RecordFinished,
     Paused,
     Finished,
 }

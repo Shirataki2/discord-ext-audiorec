@@ -111,6 +111,22 @@ class NativeVoiceClient(VoiceProtocol):
             return self.connection.is_playing()
         return False
 
+    def is_recording(self) -> bool:
+        if self.connection:
+            return self.connection.is_recording()
+        return False
+
+    def record(self) -> None:
+        if self.connection:
+            return self.connection.record()
+
+    async def stop_record(self, loop_: Optional[asyncio.AbstractEventLoop] = None) -> Optional[bytes]:
+        if self.connection:
+            if loop_ is None:
+                loop_ = asyncio.get_event_loop()
+            return await self.connection.stop_record(loop_)
+        return None
+
     def get_state(self) -> Dict:
         if self.connection:
             return self.connection.get_state()
