@@ -123,11 +123,6 @@ jobs:
           name: python-wheels
           path: ./dist/
 
-      - name: Publish distribution to Test PyPI
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          password: ${{ secrets.TESTPYPI_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
 
     env:
       CARGO_TERM_VERBOSE: true

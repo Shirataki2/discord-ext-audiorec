@@ -1,7 +1,9 @@
 discord-ext-audiorec
 ####################
 
-A discord.py experimental extention for audio recording
+**This project is currently under development. We do not guarantee it works.**
+
+A discord.py experimental extension for audio recording
 
 Inspired by `discord-ext-native-voice <https://github.com/Rapptz/discord-ext-native-voice>`_
 
