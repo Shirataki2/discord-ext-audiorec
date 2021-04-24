@@ -5,6 +5,6 @@ from .voice_client import NativeVoiceClient
 from collections import namedtuple
 
 VersionInfo = namedtuple('VersionInfo', 'major minor micro releaselevel serial')
-version_info = VersionInfo(major=0, minor=1, micro=0, releaselevel='alpha', serial=0)
+version_info = VersionInfo(major=0, minor=1, micro=1, releaselevel='alpha', serial=0)
 
 __version__ = '.'.join(map(str, [version_info.major, version_info.minor, version_info.micro]))

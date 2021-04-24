@@ -15,3 +15,7 @@ done
 for whl in dist/*.whl; do
     auditwheel repair "$whl" -w dist/
 done
+
+cd /io/dist
+
+rm -f ./*-linux_x86_64.whl
