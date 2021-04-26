@@ -104,7 +104,11 @@ impl VoiceGateway {
     }
 
     pub fn latency(&self) -> f64 {
-        self.recent_acks.iter().copied().last().unwrap_or(std::f64::NAN)
+        self.recent_acks
+            .iter()
+            .copied()
+            .last()
+            .unwrap_or(std::f64::NAN)
     }
 
     pub fn average_latency(&self) -> f64 {
