@@ -1,3 +1,4 @@
+import os
 import asyncio
 import discord
 import logging
@@ -8,8 +9,13 @@ from discord.client import Client
 from discord.channel import VoiceChannel
 from discord.backoff import ExponentialBackoff
 
-from .ffi import VoiceConnector, VoiceConnection
-from . import ffi
+IS_READTHEDOCS = os.environ.get("IS_READTHEDOCS")
+
+if IS_READTHEDOCS:
+    pass
+else:
+    from .ffi import VoiceConnector, VoiceConnection
+    from . import ffi
 
 log = logging.getLogger(__name__)
 
