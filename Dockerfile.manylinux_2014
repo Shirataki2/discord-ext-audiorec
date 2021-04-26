@@ -1,0 +1,11 @@
+FROM quay.io/pypa/manylinux2014_x86_64
+
+RUN yum -y update
+RUN yum -y install \
+    gcc \
+    clang \
+    make \
+    automake \
+    autoconf \
+    libtool \
+    opus

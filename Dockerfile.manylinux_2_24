@@ -1,4 +1,4 @@
-FROM quay.io/pypa/manylinux_2014_x86_64
+FROM quay.io/pypa/manylinux_2_24_x86_64
 
 RUN apt-get -y update
 RUN apt-get -y install \

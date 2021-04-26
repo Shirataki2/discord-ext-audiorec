@@ -93,17 +93,23 @@ jobs:
 
           
       - name: Login to ghcr.io
-        if: matrix.platform.os == 'ubuntu-latest' && matrix.python-version == 3.9
+        if: matrix.platform.os == 'ubuntu-latest' && (matrix.python-version == 3.9 || matrix.python-version == 3.8)
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Manylinux Build
+      - name: Manylinux Build (2.26)
         if: matrix.platform.os == 'ubuntu-latest' && matrix.python-version == 3.9
         run: |
           docker run --rm -v `pwd`:/io ghcr.io/shirataki2/manylinux_x86_64:latest /io/build-wheels.sh
+
+      - name: Manylinux Build (2014)
+        if: matrix.platform.os == 'ubuntu-latest' && matrix.python-version == 3.8
+        run: |
+          docker run --rm -v `pwd`:/io ghcr.io/shirataki2/manylinux_2014_x86_64:latest /io/build-wheels.sh
+
 
       - name: Build Wheel
         if: matrix.platform.os != 'ubuntu-latest'
@@ -118,7 +124,7 @@ jobs:
           python setup.py sdist
 
       - uses: actions/upload-artifact@v2
-        if: matrix.platform.os != 'ubuntu-latest' || matrix.python-version == 3.9
+        if: matrix.platform.os != 'ubuntu-latest' || matrix.python-version == 3.9 || matrix.python-version == 3.8
         with:
           name: python-wheels
           path: ./dist/
