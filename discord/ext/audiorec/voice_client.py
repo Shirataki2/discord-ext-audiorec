@@ -233,6 +233,8 @@ class NativeVoiceClient(VoiceProtocol):
 
                 @commands.command()
                 async def stop(self, ctx: commands.Context):
+                    if not ctx.voice_client.is_recording():
+                        return
                     await ctx.send(f'Stop Recording')
 
                     wav_bytes = await ctx.voice_client.stop_record()
