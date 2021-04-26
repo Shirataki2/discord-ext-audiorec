@@ -2,7 +2,14 @@ import re
 import os
 from pathlib import Path
 from setuptools import setup
-from setuptools_rust import RustExtension
+
+kwargs = {}
+
+try: # for readthedocs
+    from setuptools_rust import RustExtension
+    kwargs.update({"rust_extensions": [RustExtension('discord.ext.audiorec.ffi')]})
+except ImportError:
+    pass
 
 CURDIR = Path(os.path.dirname(__file__))
 PROJECT_ROOT = CURDIR / 'discord' / 'ext' / 'audiorec'
@@ -74,5 +81,5 @@ setup(
     version=VERSION,
     include_package_data=True,
     zip_safe=False,
-    rust_extensions=[RustExtension('discord.ext.audiorec.ffi')]
+    **kwargs
 )
