@@ -5,11 +5,11 @@ from setuptools import setup
 
 kwargs = {}
 
-try: # for readthedocs
+IS_READTHEDOCS = os.environ.get("IS_READTHEDOCS")
+
+if not IS_READTHEDOCS:
     from setuptools_rust import RustExtension
     kwargs.update({"rust_extensions": [RustExtension('discord.ext.audiorec.ffi')]})
-except ImportError:
-    pass
 
 CURDIR = Path(os.path.dirname(__file__))
 PROJECT_ROOT = CURDIR / 'discord' / 'ext' / 'audiorec'
