@@ -1,6 +1,9 @@
 discord-ext-audiorec
 ####################
 
+|Docs| |PyPI| |Support|
+
+
 **This project is currently under development. We do not guarantee it works.**
 
 A discord.py experimental extension for audio recording
@@ -110,3 +113,13 @@ Usage
 
     bot.add_cog(Music(bot))
     bot.run(os.environ['TOKEN'])
+
+.. |Docs| image:: https://readthedocs.org/projects/discord-ext-audiorec/badge/?version=latest
+    :target: https://discord-ext-audiorec.readthedocs.io/en/latest/?badge=latest
+
+.. |PyPI| image:: https://badge.fury.io/py/discord-ext-audiorec.svg
+    :target: https://pypi.org/project/discord-ext-audiorec/
+
+
+.. |Support| image:: https://img.shields.io/pypi/pyversions/discord-ext-audiorec.svg
+    :target: https://pypi.org/project/discord-ext-audiorec/

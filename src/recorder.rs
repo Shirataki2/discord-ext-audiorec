@@ -92,7 +92,7 @@ impl AudioDecoder {
                             elapsed = elapsed.min(1.0);
                             let mut margin = vec![
                                 0.0;
-                                (SAMPLE_SIZE as f64 * (elapsed - 0.02) * SAMPLING_RATE as f64)
+                                2 * (SAMPLE_SIZE as f64 * (elapsed - 0.02) * SAMPLING_RATE as f64)
                                     as usize
                             ];
                             pcmdata.append(&mut margin);

@@ -1,5 +1,5 @@
-use pyo3::create_exception;
 use pyo3::PyErr;
+use pyo3::{create_exception, PyObject, Python, ToPyObject};
 use thiserror::Error;
 
 #[allow(dead_code)]
@@ -72,5 +72,35 @@ impl From<DiscordError> for PyErr {
             OpusError(_) => InternalError::new_err(err.to_string()),
             WavFileError(_) => InternalIOError::new_err(err.to_string()),
         }
+    }
+}
+
+impl From<&DiscordError> for PyErr {
+    fn from(err: &DiscordError) -> PyErr {
+        use DiscordError::*;
+        match err {
+            BuilderMissingRequiredField(_) => MissingFieldError::new_err(err.to_string()),
+            TlsConnectorCreationFailed(_) => InternalError::new_err(err.to_string()),
+            IoError(_) => InternalIOError::new_err(err.to_string()),
+            InvalidDnsName(_) => InternalError::new_err(err.to_string()),
+            WebsocketHandshakeFailed(_) => TlsError::new_err(err.to_string()),
+            TungsteniteError(_) => GatewayError::new_err(err.to_string()),
+            SerdeError(_) => InternalError::new_err(err.to_string()),
+            InvalidOpCode(_) => GatewayError::new_err(err.to_string()),
+            AddrParseFailed(_) => GatewayError::new_err(err.to_string()),
+            ConnectionClosed(c) if ![1000, 4014, 4015].contains(&c) => {
+                TryReconnect::new_err(err.to_string())
+            }
+            ConnectionClosed(_) => GatewayError::new_err(err.to_string()),
+            EncryptionError(_) => EncryptionFailed::new_err(err.to_string()),
+            OpusError(_) => InternalError::new_err(err.to_string()),
+            WavFileError(_) => InternalIOError::new_err(err.to_string()),
+        }
+    }
+}
+
+impl ToPyObject for DiscordError {
+    fn to_object(&self, py: Python) -> PyObject {
+        PyErr::from(self).to_object(py)
     }
 }

@@ -103,6 +103,18 @@ impl VoiceGateway {
         Ok(())
     }
 
+    pub fn latency(&self) -> f64 {
+        self.recent_acks.iter().copied().last().unwrap_or(std::f64::NAN)
+    }
+
+    pub fn average_latency(&self) -> f64 {
+        if self.recent_acks.is_empty() {
+            std::f64::NAN
+        } else {
+            self.recent_acks.iter().sum::<f64>() / self.recent_acks.len() as f64
+        }
+    }
+
     pub fn connection_flow(&mut self, resume: bool) -> Result<()> {
         self.poll()?; // Hello
         if resume {
