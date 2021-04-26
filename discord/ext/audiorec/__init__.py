@@ -18,6 +18,6 @@ __copyright__ = 'Copyright 2021-present Tomoya Ishii'
 from collections import namedtuple
 
 VersionInfo = namedtuple('VersionInfo', 'major minor micro releaselevel serial')
-version_info = VersionInfo(major=0, minor=1, micro=3, releaselevel='alpha', serial=0)
+version_info = VersionInfo(major=0, minor=1, micro=4, releaselevel='alpha', serial=0)
 
 __version__ = '.'.join(map(str, [version_info.major, version_info.minor, version_info.micro]))

@@ -1,2 +1,2 @@
-include pyproject.toml Cargo.toml
+include pyproject.toml Cargo.toml requirements.txt requirements-dev.txt
 recursive-include src *
